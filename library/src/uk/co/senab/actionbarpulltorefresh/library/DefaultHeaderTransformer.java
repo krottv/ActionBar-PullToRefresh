@@ -30,6 +30,7 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RectShape;
 import android.os.Build;
+import android.support.v7.app.ActionBarActivity;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -38,7 +39,6 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
 import fr.castorflex.android.smoothprogressbar.SmoothProgressBar;
 import fr.castorflex.android.smoothprogressbar.SmoothProgressDrawable;
 import uk.co.senab.actionbarpulltorefresh.library.sdk.Compat;
@@ -46,15 +46,24 @@ import uk.co.senab.actionbarpulltorefresh.library.sdk.Compat;
 /**
  * Default Header Transformer.
  */
-public class DefaultHeaderTransformer extends HeaderTransformer {
+public class DefaultHeaderTransformer extends HeaderTransformer{
+    public interface OnNeedToShowBarListener {
+        public void onNeedToShowBar();
+    }
+    private OnNeedToShowBarListener onNeedToShowBarListener;
 
-    public static final int PROGRESS_BAR_STYLE_INSIDE = 0;
-    public static final int PROGRESS_BAR_STYLE_OUTSIDE = 1;
+    public void setOnNeedToShowBarListener(OnNeedToShowBarListener onNeedToShowBarListener) {
+        this.onNeedToShowBarListener = onNeedToShowBarListener;
+    }
+
+    private static final int PROGRESS_BAR_STYLE_INSIDE = 0;
+    private static final int PROGRESS_BAR_STYLE_OUTSIDE = 1;
 
     private View mHeaderView;
     private ViewGroup mContentLayout;
     private TextView mHeaderTextView;
     private SmoothProgressBar mHeaderProgressBar;
+    private ActionBarActivity mActivity;
 
     private CharSequence mPullRefreshLabel, mRefreshingLabel, mReleaseLabel;
 
@@ -78,7 +87,7 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
     @Override
     public void onViewCreated(Activity activity, View headerView) {
         mHeaderView = headerView;
-
+        mActivity = (ActionBarActivity)activity;
         // Get ProgressBar and TextView
         mHeaderProgressBar = (SmoothProgressBar) headerView.findViewById(R.id.ptr_progress);
         mHeaderTextView = (TextView) headerView.findViewById(R.id.ptr_text);
@@ -115,6 +124,8 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
     @Override
     public void onReset() {
         // Reset Progress Bar
+
+
         if (mHeaderProgressBar != null) {
             mHeaderProgressBar.setVisibility(View.VISIBLE);
             mHeaderProgressBar.setProgress(0);
@@ -138,7 +149,7 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
     public void onPulled(float percentagePulled) {
         if (mHeaderProgressBar != null) {
             mHeaderProgressBar.setVisibility(View.VISIBLE);
-            final float progress = mInterpolator.getInterpolation(percentagePulled);
+            float progress = mInterpolator.getInterpolation(percentagePulled);
             mHeaderProgressBar.setProgress(Math.round(mHeaderProgressBar.getMax() * progress));
         }
     }
@@ -151,7 +162,9 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
         if (mHeaderProgressBar != null) {
             mHeaderProgressBar.setVisibility(View.VISIBLE);
             mHeaderProgressBar.setIndeterminate(true);
+            mHeaderProgressBar.invalidate();
         }
+
     }
 
     @Override
@@ -167,19 +180,19 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
     @Override
     public void onRefreshMinimized() {
         // Here we fade out most of the header, leaving just the progress bar
-        if (mContentLayout != null) {
-            ObjectAnimator.ofFloat(mContentLayout, "alpha", 1f, 0f).start();
-        }
+        if(onNeedToShowBarListener != null)
+            onNeedToShowBarListener.onNeedToShowBar();
+
     }
 
-    public View getHeaderView() {
+    protected View getHeaderView() {
         return mHeaderView;
     }
 
     @Override
     public boolean showHeaderView() {
         final boolean changeVis = mHeaderView.getVisibility() != View.VISIBLE;
-
+        mActivity.getSupportActionBar().hide();
         if (changeVis) {
             mHeaderView.setVisibility(View.VISIBLE);
             AnimatorSet animSet = new AnimatorSet();
@@ -197,6 +210,10 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
     @Override
     public boolean hideHeaderView() {
         final boolean changeVis = mHeaderView.getVisibility() != View.GONE;
+        if(onNeedToShowBarListener != null)
+            onNeedToShowBarListener.onNeedToShowBar();
+        else
+            mActivity.getSupportActionBar().show();
 
         if (changeVis) {
             Animator animator;
@@ -291,9 +308,8 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
 
         // Retrieve the Action Bar size from the app theme or the Action Bar's style
         if (mContentLayout != null) {
-            final int height = styleAttrs.getDimensionPixelSize(
+            mContentLayout.getLayoutParams().height = styleAttrs.getDimensionPixelSize(
                     R.styleable.PullToRefreshHeader_ptrHeaderHeight, getActionBarSize(activity));
-            mContentLayout.getLayoutParams().height = height;
             mContentLayout.requestLayout();
         }
 
@@ -372,7 +388,7 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
             mHeaderProgressBar.setIndeterminateDrawable(
                     new SmoothProgressDrawable.Builder(mHeaderProgressBar.getContext())
                             .color(mProgressDrawableColor)
-                            .width(strokeWidth)
+                            .strokeWidth(strokeWidth)
                             .build());
 
             ShapeDrawable shape = new ShapeDrawable();
@@ -425,7 +441,6 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
     protected int getMinimumApiLevel() {
         return Build.VERSION_CODES.ICE_CREAM_SANDWICH;
     }
-
     class HideAnimationCallback extends AnimatorListenerAdapter {
         @Override
         public void onAnimationEnd(Animator animation) {

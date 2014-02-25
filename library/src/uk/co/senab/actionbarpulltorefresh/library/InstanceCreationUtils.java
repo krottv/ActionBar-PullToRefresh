@@ -19,16 +19,15 @@ package uk.co.senab.actionbarpulltorefresh.library;
 import android.content.Context;
 import android.util.Log;
 import android.view.View;
+import uk.co.senab.actionbarpulltorefresh.library.viewdelegates.AbsListViewDelegate;
+import uk.co.senab.actionbarpulltorefresh.library.viewdelegates.ScrollYDelegate;
+import uk.co.senab.actionbarpulltorefresh.library.viewdelegates.ViewDelegate;
+import uk.co.senab.actionbarpulltorefresh.library.viewdelegates.WebViewDelegate;
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import uk.co.senab.actionbarpulltorefresh.library.viewdelegates.AbsListViewDelegate;
-import uk.co.senab.actionbarpulltorefresh.library.viewdelegates.ScrollYDelegate;
-import uk.co.senab.actionbarpulltorefresh.library.viewdelegates.ViewDelegate;
-import uk.co.senab.actionbarpulltorefresh.library.viewdelegates.WebViewDelegate;
 
 class InstanceCreationUtils {
 
@@ -46,8 +45,8 @@ class InstanceCreationUtils {
     }
 
     private static void addBuiltinDelegates(Class[] supportedViews, Class<?> delegateClass) {
-        for (int i = 0, z = supportedViews.length; i< z ; i++) {
-            BUILT_IN_DELEGATES.put(supportedViews[i], delegateClass);
+        for (Class supportedView : supportedViews) {
+            BUILT_IN_DELEGATES.put(supportedView, delegateClass);
         }
     }
 
