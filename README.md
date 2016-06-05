@@ -1,6 +1,6 @@
 # ActionBar-PullToRefresh
 
-This is fork of ActionBar-PullToRefresh for using in Dialogs or SlidingMenu with ActionBarCompat, if you don't use ActionBarCompat use can easly change little part of code.I use this project in my android app Stellio(child of https://play.google.com/store/apps/details?id=com.perm.DoomPlay)
+This is fork of ActionBar-PullToRefresh for using in Dialogs or SlidingMenu with ActionBarCompat, if you don't use ActionBarCompat use can easly change little part of the code. The project is used in https://play.google.com/store/apps/details?id=ru.stellio.player
 
 
 # How to use it
